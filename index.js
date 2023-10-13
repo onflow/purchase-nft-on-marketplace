@@ -12,7 +12,6 @@ const transactionExplanationPath = `${recipe}/explanations/transaction.txt`;
 export const purchaseNftOnMarketplace = {
   slug: recipe,
   title: "Purchase NFT on Marketplace",
-  description: "",
   createdAt: Date(2022, 3, 1),
   author: "Flow Blockchain",
   playgroundLink:
