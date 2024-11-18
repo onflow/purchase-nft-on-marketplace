@@ -9,42 +9,48 @@ transaction {
     let storefront: &NFTStorefront.Storefront{NFTStorefront.StorefrontPublic}
     let listing: &NFTStorefront.Listing{NFTStorefront.ListingPublic}
 
-    prepare(acct: AuthAccount) {
+    prepare(acct: auth(Storage, Capabilities) &Account) {
+        // Borrow the storefront reference
         self.storefront = getAccount(0x04)
-            .getCapability<&NFTStorefront.Storefront{NFTStorefront.StorefrontPublic}>(
+            .capabilities
+            .borrow<&NFTStorefront.Storefront{NFTStorefront.StorefrontPublic}>(
                 NFTStorefront.StorefrontPublicPath
-            )!
-            .borrow()
-            ?? panic("Could not borrow Storefront from provided address")
+            ) ?? panic("Could not borrow Storefront from provided address")
 
+        // Borrow the listing reference
         self.listing = self.storefront.borrowListing(listingResourceID: 10)
-                  ?? panic("No Offer with that ID in Storefront")
+            ?? panic("No Offer with that ID in Storefront")
+
+        // Fetch the sale price
         let price = self.listing.getDetails().salePrice
 
-        let mainFlowVault = acct.borrow<&FungibleToken.Vault>(from: /storage/MainVault)
-            ?? panic("Cannot borrow FlowToken vault from acct storage")
+        // Borrow FlowToken vault and withdraw payment
+        let mainFlowVault = acct.capabilities.storage.borrow<&FungibleToken.Vault>(
+            from: /storage/MainVault
+        ) ?? panic("Cannot borrow FlowToken vault from account storage")
         self.paymentVault <- mainFlowVault.withdraw(amount: price)
 
-        self.exampleNFTCollection = acct.borrow<&ExampleNFT.Collection{NonFungibleToken.Receiver}>(
-            from: ExampleNFT.CollectionStoragePath) ?? panic("Cannot borrow NFT collection receiver from account")
+        // Borrow the NFT collection receiver reference
+        self.exampleNFTCollection = acct.capabilities.storage.borrow<&ExampleNFT.Collection{NonFungibleToken.Receiver}>(
+            from: ExampleNFT.CollectionStoragePath
+        ) ?? panic("Cannot borrow NFT collection receiver from account")
     }
 
     execute {
-     let item <- self.listing.purchase(
-     payment: <-self.paymentVault
-     )
+        // Execute the purchase
+        let item <- self.listing.purchase(
+            payment: <-self.paymentVault
+        )
 
-       self.exampleNFTCollection.deposit(token: <-item)
+        // Deposit the purchased NFT into the buyer's collection
+        self.exampleNFTCollection.deposit(token: <-item)
 
-        /* //-
-        error: Execution failed:
-        computation limited exceeded: 100
-        */
-        // Be kind and recycle
+        /* Potential computation issue: Ensure the cleanup operation is efficient. */
+        // Cleanup the listing from the storefront
         self.storefront.cleanup(listingResourceID: 10)
-        log("transaction done")
+        
+        log("Transaction completed")
     }
 
-    //- Post to check item is in collection?
+    // Optional: Post-condition checks to ensure item is in collection
 }
-
