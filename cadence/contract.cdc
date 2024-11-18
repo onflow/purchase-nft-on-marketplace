@@ -16,11 +16,20 @@ fun purchase(payment: @FungibleToken.Vault): @NonFungibleToken.NFT {
         .borrow()!
         .withdraw(withdrawID: self.details.nftID)
 
+    // Neither receivers nor providers are trustworthy, they must implement the correct
+    // interface but beyond complying with its pre/post conditions they are not gauranteed
+    // to implement the functionality behind the interface in any given way.
+    // Therefore we cannot trust the Collection resource behind the interface,
+    // and we must check the NFT resource it gives us to make sure that it is the correct one.
+    
     // Validate the NFT type and ID
     assert(nft.isInstance(self.details.nftType), message: "Withdrawn NFT is not of the specified type")
     assert(nft.id == self.details.nftID, message: "Withdrawn NFT does not have the specified ID")
 
-    // Initialize a residual receiver for any leftover payment
+    // Rather than aborting the transaction if any receiver is absent when we try to pay it,
+    // we send the cut to the first valid receiver.
+    // The first receiver should therefore either be the seller, or an agreed recipient for
+    // any unpaid cuts.
     var residualReceiver: &{FungibleToken.Receiver}? = nil
 
     // Pay each beneficiary their portion of the payment
