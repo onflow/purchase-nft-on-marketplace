@@ -1,13 +1,13 @@
 {
 	"contracts": {
-		"NFTStorefront": {
-			"source": "./cadence/contracts/Recipe.cdc",
+		"ExampleNFT": {
+			"source": "./cadence/contracts/ExampleNFT.cdc",
 			"aliases": {
 				"emulator": "f8d6e0586b0a20c7"
 			}
 		},
-		"ExampleNFT": {
-			"source": "./cadence/contracts/ExampleNFT.cdc",
+		"NFTStorefront": {
+			"source": "./cadence/contracts/Recipe.cdc",
 			"aliases": {
 				"emulator": "f8d6e0586b0a20c7"
 			}

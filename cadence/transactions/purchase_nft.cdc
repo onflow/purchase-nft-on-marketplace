@@ -10,12 +10,23 @@ transaction {
     let storefront: &{NFTStorefront.StorefrontPublic}
     let listing: &{NFTStorefront.ListingPublic}
 
-    prepare(acct: auth(Storage, Capabilities) &Account) {
-        // Borrow the storefront reference
-        self.storefront = acct.capabilities
-            .getCapability(NFTStorefront.StorefrontPublicPath)
-            .borrow<&{NFTStorefront.StorefrontPublic}>()
-            ?? panic("Could not borrow Storefront from provided address")
+     prepare(acct: auth(Storage, Capabilities) &Account) {
+
+        // Create and save the storefront
+        let storefront <- NFTStorefront.createStorefront()
+        acct.storage.save(<-storefront, to: NFTStorefront.StorefrontStoragePath)
+
+        // Publish the storefront capability to the public path
+        let storefrontCap = acct.capabilities.storage.issue<&{NFTStorefront.StorefrontPublic}>(
+            NFTStorefront.StorefrontStoragePath
+        )
+        acct.capabilities.publish(storefrontCap, at: NFTStorefront.StorefrontPublicPath)
+
+        // Borrow the storefront reference using the public capability path
+        let storefrontRef = acct.capabilities.borrow<&{NFTStorefront.StorefrontPublic}>(
+            NFTStorefront.StorefrontPublicPath
+        ) ?? panic("Could not borrow Storefront from provided address")
+        self.storefront = storefrontRef
 
         // Borrow the listing reference
         self.listing = self.storefront.borrowListing(listingResourceID: 10)
@@ -24,18 +35,20 @@ transaction {
         // Fetch the sale price
         let price = self.listing.getDetails().salePrice
 
-        // Borrow FlowToken vault and withdraw payment
-        let mainFlowVault = acct.capabilities
-            .getCapability(/public/flowTokenReceiver)
-            .borrow<&{FungibleToken.Provider}>()
-            ?? panic("Cannot borrow FlowToken vault from account storage")
-        self.paymentVault <- mainFlowVault.withdraw(amount: price)
+        // Borrow FlowToken vault with proper authorization to withdraw
+        let flowTokenCap = acct.capabilities.borrow<auth(FungibleToken.Withdraw) &{FungibleToken.Vault}>(
+        /public/flowTokenReceiver
+    )   ?? panic("Cannot borrow FlowToken vault with Withdraw entitlement from account")
+        
+        // Withdraw the payment
+        self.paymentVault <- flowTokenCap.withdraw(amount: price)
+
 
         // Borrow the NFT collection receiver reference
-        self.exampleNFTCollection = acct.capabilities
-            .getCapability(ExampleNFT.CollectionPublicPath)
-            .borrow<&ExampleNFT.Collection>()
-            ?? panic("Cannot borrow NFT collection receiver from account")
+        let nftCollectionCap = acct.capabilities.borrow<&ExampleNFT.Collection>(
+            ExampleNFT.CollectionPublicPath
+        ) ?? panic("Cannot borrow NFT collection receiver from account")
+        self.exampleNFTCollection = nftCollectionCap
     }
 
     execute {
