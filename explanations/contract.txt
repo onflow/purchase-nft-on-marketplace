@@ -1,13 +1,5 @@
-When purchasing an NFT, all that is needed from the purchaser is their payment that comes in the form of their vault resource.
+When purchasing an NFT, the purchaser needs only to provide their payment in the form of a vault resource. The smart contract then verifies that the listing has not already been purchased, ensuring the fungible token provided matches the required type for the transaction and that the payment amount is correct.
 
-Once that happens, the smart contract checks to make sure the listing hasn't already been purchased, the fungible token is the right type for this transaction, and that the payment is the correct amount.
+If all these conditions are met, the purchase is approved, and the listing status is updated to reflect the purchase. The contract withdraws the NFT from the seller's account and verifies that it is the correct type and ID, ensuring the purchased NFT is the one intended. Once confirmed, the contract calculates the sales cuts and begins depositing the respective amounts into the vault receivers of the designated accounts using pre-established capabilities. Any remaining funds are transferred into a residual receiver, which acts as a container for the leftover payment vault, with its balance reduced to zero by this process.
 
-If this is the case then the purchase can be approved. We change the details of the listing to purchased. We will then withdraw the NFT from the account that listed it.
-
-We check to see if the NFT is of the right type and the right ID to make sure that the NFT being purchased is in fact the correct one.
-
-After that, we take all of the sales cuts and start depositing the amounts into the accounts vault receivers we have capabilities for.
-
-Then we move the remaining payment vault into the residual receiver local variable. The price of the remaining payment vault should be 0 so we are just moving our resource into there.
-
-Lastly we emit that the transaction has completed and we return the NFT which can then be deposited into the purchasers collection.
+Finally, the transaction is completed by emitting an event signaling its success, and the NFT is returned to the purchaser, allowing them to deposit it into their collection.
