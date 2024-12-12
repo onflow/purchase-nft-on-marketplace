@@ -8,8 +8,9 @@ transaction {
     let exampleNFTCollection: &ExampleNFT.Collection
     let storefront: auth(NFTStorefront.CreateListing) &NFTStorefront.Storefront
     let listing: &{NFTStorefront.ListingPublic}
+    var listingResourceId: UInt64
 
-     prepare(acct: auth(Storage, Capabilities, NFTStorefront.CreateListing) &Account) {
+    prepare(acct: auth(Storage, Capabilities, NFTStorefront.CreateListing) &Account) {
 
         // Create and save the storefront
         let storefront <- NFTStorefront.createStorefront()
@@ -65,7 +66,7 @@ transaction {
         )
         
         // List the NFT
-        let listingResourceId = self.storefront.createListing(
+        self.listingResourceId = self.storefront.createListing(
             nftProviderCapability: nftProviderCapability,
             nftType: Type<@ExampleNFT.NFT>(),
             nftID: nftID,
@@ -82,20 +83,22 @@ transaction {
         log("Listing created successfully")
 
         // Borrow the listing reference
-        self.listing = self.storefront.borrowListing(listingResourceID: listingResourceId)
+        self.listing = self.storefront.borrowListing(listingResourceID: self.listingResourceId)
             ?? panic("No Offer with that ID in Storefront")
 
         // Fetch the sale price
         let price = self.listing.getDetails().salePrice
 
-        // Borrow FlowToken vault with proper authorization to withdraw
-        let flowTokenCap = acct.capabilities.borrow<auth(FungibleToken.Withdraw) &{FungibleToken.Vault}>(
-        /public/flowTokenReceiver
-    )   ?? panic("Cannot borrow FlowToken vault with Withdraw entitlement from account")
-        
-        // Withdraw the payment
-        self.paymentVault <- flowTokenCap.withdraw(amount: price)
+        // Issue the capability for the FlowToken vault with Withdraw entitlement
+        let flowTokenCap = acct.capabilities.storage.issue<auth(FungibleToken.Withdraw) &{FungibleToken.Vault}>(
+            /storage/flowTokenVault
+        )
 
+        // Withdraw the payment
+        let flowTokenVault = flowTokenCap.borrow()
+        ?? panic("Failed to borrow FungibleToken.Vault from capability")
+
+        self.paymentVault <- flowTokenVault.withdraw(amount: price)
 
         // Borrow the NFT collection receiver reference
         let nftCollectionCap = acct.capabilities.borrow<&ExampleNFT.Collection>(
@@ -115,7 +118,7 @@ transaction {
         self.exampleNFTCollection.deposit(token: <-nft)
 
         // Cleanup the listing from the storefront
-        self.storefront.cleanup(listingResourceID: 10)
+        self.storefront.cleanup(listingResourceID: self.listingResourceId)
 
         log("Transaction completed successfully")
     }
