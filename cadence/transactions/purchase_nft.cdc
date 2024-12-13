@@ -122,9 +122,6 @@ transaction {
         let nft <- item as! @ExampleNFT.NFT
         self.exampleNFTCollection.deposit(token: <-nft)
 
-        // Cleanup the listing from the storefront
-        self.storefront.cleanup(listingResourceID: self.listingResourceId)
-
         log("Transaction completed successfully")
     }
 }
