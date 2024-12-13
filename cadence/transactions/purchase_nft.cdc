@@ -114,7 +114,8 @@ transaction {
     execute {
         // Execute the purchase
         let item <- self.listing.purchase(
-            payment: <-self.paymentVault
+            payment: <-self.paymentVault,
+            commissionRecipient: nil 
         )
 
         // Confirm the token type and deposit the purchased NFT into the buyer's collection
