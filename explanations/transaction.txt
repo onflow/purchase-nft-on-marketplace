@@ -1,13 +1,5 @@
-Here we are defining initially the types that we are expected to return for each of the listed variables.
+This transaction begins by defining the expected types for the variables that will be returned during the process. The first step involves accessing the storefront associated with the account holding the desired listing. This storefront is publicly accessible via a linked capability, enabling others to interact with and purchase listings.
 
-First we need to get the storefront of the account that the listing is under. You will have linked a public capability to this store front so that others can access it and purchase your listing.
+Once the storefront is borrowed, the transaction retrieves the specific listing of interest and assigns it to the listing variable. The price of the listing is then fetched, which allows the purchaser to prepare the appropriate payment. Using the price, the purchaser withdraws the required tokens from their Vault resource, ensuring they have the correct amount for the transaction. Additionally, the purchaser retrieves their Receiver capability, which will be used later to deposit the purchased NFT into their collection.
 
-Once we borrow that storefront, we then want to borrow the listing that we are interested in buying. We assign that to the listing variable.
-
-We'll then fetch the price of that listing so that in the next step when we take our Vault resource and withdraw tokens from it, we pass in the price of the NFT because that is how much we would like to withdraw.
-
-We'll also get our Receiver capability so that we can deposit the NFT into our collection.
-
-When we're ready to execute, we call the purchase function on our listing and pass in the payment vault we'll be paying for this with. This will return and NFT resource for us that we temporarily store in our item variable.
-
-We'll then deposit that NFT into our collection, and then we'll cleanup the storefront by deleting our listing, and with that you have created a purchase on an NFT marketplace.
+With these preparations complete, the purchaser invokes the purchase function on the listing, passing in their payment vault as the payment method. This action returns the NFT resource, which is temporarily stored in the item variable. The transaction then deposits the NFT into the purchaser's collection using their Receiver capability. Finally, it cleans up the storefront by deleting the completed listing, marking the successful completion of the purchase on the NFT marketplace.
