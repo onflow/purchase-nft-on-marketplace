@@ -1,1 +1,0 @@
-./cadence/transactions/purchase_nft.cdc
